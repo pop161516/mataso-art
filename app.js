@@ -23,7 +23,7 @@ scene.add(dirLight);
 // 3. Load Blender Model
 const loader = new GLTFLoader();
 loader.load(
-  'static/3D/AvasRoom.glb', 
+  'static/3D/cube.glb', 
   function (gltf) {
     scene.add(gltf.scene);
     console.log('Model loaded successfully!');
