@@ -3,30 +3,49 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Portfolio</title>
+    <title>3D Portfolio - Debug Mode</title>
     <style>
-      body {
+      html, body {
         margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
         overflow: hidden;
+        background-color: #111; /* Dark background so text stands out */
         font-family: sans-serif;
       }
       #blocker {
         position: absolute;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.75);
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         color: white;
-        font-size: 24px;
+        font-size: 20px;
         cursor: pointer;
         user-select: none;
         z-index: 10;
+        text-align: center;
+      }
+      #debug-log {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0,0,0,0.8);
+        color: #00ff00;
+        font-family: monospace;
+        font-size: 12px;
+        padding: 10px;
+        border-radius: 5px;
+        max-width: 400px;
+        pointer-events: none;
+        z-index: 100;
       }
     </style>
     
-    <!-- This tells the browser where to find 'three' and its addons -->
     <script type="importmap">
       {
         "imports": {
@@ -38,10 +57,144 @@
   </head>
   <body>
     <div id="blocker">
-      <div>Click to Explore (WASD to move, Mouse to look)</div>
+      <div style="font-size: 32px; margin-bottom: 10px;">✨ 3D Space Ready ✨</div>
+      <div>Click anywhere here to capture mouse and explore.</div>
+      <div style="font-size: 14px; margin-top: 15px; color: #aaa;">Controls: WASD to walk | Mouse to look around</div>
     </div>
 
-    <!-- Load your script as a module -->
-    <script type="module" src="./app.js"></script>
+    <!-- On-screen console logs so you can read them easily on mobile or desktop -->
+    <div id="debug-log">System Status: Booting...</div>
+
+    <script type="module">
+      import * as THREE from 'three';
+      import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+      import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+      // Custom logger to print to screen and console
+      const debugEl = document.getElementById('debug-log');
+      function log(msg, isError = false) {
+          console.log(msg);
+          const time = new Date().toLocaleTimeString();
+          debugEl.innerHTML += `<br><span style="color:${isError ? '#ff4444' : '#00ff00'}">[${time}] ${msg}</span>`;
+      }
+
+      log("Three.js libraries imported successfully.");
+
+      // 1. Core Setup
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x1a2634); // Deep slate blue so you know it loaded
+
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 1.6, 5); // Placed slightly back so you aren't stuck inside an object at start
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+      log("Canvas renderer attached to DOM.");
+
+      // 2. Add a Reference Floor (So you can test movement even if your Blender file fails!)
+      const gridHelper = new THREE.GridHelper(50, 50, 0xff0000, 0x444444);
+      gridHelper.position.y = 0;
+      scene.add(gridHelper);
+      log("Temporary grid floor added for reference.");
+
+      // 3. Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(5, 10, 7.5);
+      scene.add(dirLight);
+
+      // 4. Load Blender Model
+      const loader = new GLTFLoader();
+      const modelPath = 'static/3D/AvasRoom.glb';
+      log(`Attempting to load 3D asset from: "${modelPath}"...`);
+
+      loader.load(
+        modelPath, 
+        function (gltf) {
+          scene.add(gltf.scene);
+          log("✅ SUCCESS: Blender model loaded and added to scene!");
+        },
+        function (xhr) {
+          if (xhr.total > 0) {
+            const percent = Math.round((xhr.loaded / xhr.total) * 100);
+            log(`Loading progress: ${percent}%`);
+          }
+        },
+        function (error) {
+          log(`❌ ERROR: Could not read your GLB file. Check path or Deno serving config.`, true);
+          console.error(error);
+        }
+      );
+
+      // 5. Controls setup
+      const controls = new PointerLockControls(camera, document.body);
+      const blocker = document.getElementById('blocker');
+
+      blocker.addEventListener('click', function () {
+        controls.lock(); 
+      });
+
+      controls.addEventListener('lock', function () {
+        blocker.style.display = 'none';
+        log("Mouse locked. Look around!");
+      });
+
+      controls.addEventListener('unlock', function () {
+        blocker.style.display = 'flex';
+        log("Mouse unlocked.");
+      });
+
+      scene.add(controls.getObject());
+
+      // 6. Movement Logic
+      const keyboard = { KeyW: false, KeyA: false, KeyS: false, KeyD: false };
+
+      document.addEventListener('keydown', (e) => { 
+        if (keyboard[e.code] !== undefined) keyboard[e.code] = true; 
+      });
+      document.addEventListener('keyup', (e) => { 
+        if (keyboard[e.code] !== undefined) keyboard[e.code] = false; 
+      });
+
+      const velocity = new THREE.Vector3();
+      const direction = new THREE.Vector3();
+      const clock = new THREE.Clock();
+      const moveSpeed = 40.0;
+
+      // 7. Animation Loop
+      function animate() {
+        requestAnimationFrame(animate);
+
+        const delta = clock.getDelta();
+
+        if (controls.isLocked === true) {
+          velocity.x -= velocity.x * 10.0 * delta;
+          velocity.z -= velocity.z * 10.0 * delta;
+
+          direction.z = Number(keyboard.KeyS) - Number(keyboard.KeyW); 
+          direction.x = Number(keyboard.KeyD) - Number(keyboard.KeyA);
+          direction.normalize(); 
+
+          if (keyboard.KeyW || keyboard.KeyS) velocity.z += direction.z * moveSpeed * delta;
+          if (keyboard.KeyA || keyboard.KeyD) velocity.x += direction.x * moveSpeed * delta;
+
+          controls.moveRight(velocity.x * delta);
+          controls.moveForward(-velocity.z * delta); 
+        }
+
+        renderer.render(scene, camera);
+      }
+
+      animate();
+      log("Engine running at 60fps.");
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    </script>
   </body>
 </html>
