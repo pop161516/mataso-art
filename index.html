@@ -1,17 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Portfolio</title>
     <style>
-      p {
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: sans-serif;
+      }
+      #blocker {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
         display: flex;
-        flex-wrap: wrap;
-        align-content: center;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        user-select: none;
+        z-index: 10;
       }
     </style>
-	</head>
-	<body>
-    <p>
-    Click to Explore
-    </p>
-	</body>
+    
+    <!-- This tells the browser where to find 'three' and its addons -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://esm.sh/three@0.160.0",
+          "three/addons/": "https://esm.sh/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="blocker">
+      <div>Click to Explore (WASD to move, Mouse to look)</div>
+    </div>
+
+    <!-- Load your script as a module -->
+    <script type="module" src="./app.js"></script>
+  </body>
 </html>
