@@ -107,7 +107,11 @@
 
       // 4. Load Blender Model
       const loader = new GLTFLoader();
-      const modelPath = '/AvasRoom.glb';
+      // const modelPath = '/AvasRoom.glb';
+      // Replace this with your actual GitHub username and repository name!
+      const modelPath = 'https://raw.githack.com/pop161516/mataso-art/main/AvasRoom.glb';
+
+      //[https://github.com/pop161516/mataso-art/blob/main/AvasRoom.glb](https://github.com/pop161516/mataso-art/blob/main/AvasRoom.glb)
       log(`Attempting to load 3D asset from: "${modelPath}"...`);
 
       loader.load(
