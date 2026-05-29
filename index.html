@@ -277,13 +277,13 @@
             cameraRight.crossVectors(cameraDirection, controlObject.up).normalize().negate();
 
             const rayOrigin = controlObject.position.clone();
-            rayOrigin.y = 0.5;
+            rayOrigin.y = 0.1;
 
             // Z Axis
             if (velocity.z !== 0) {
               const rayDirZ = cameraDirection.clone().multiplyScalar(velocity.z < 0 ? 1 : -1);
               raycaster.set(rayOrigin, rayDirZ);
-              raycaster.far = Math.abs(velocity.z * delta) + 1.2;
+              raycaster.far = Math.abs(velocity.z * delta) + 0.1;
               const intersectionsZ = raycaster.intersectObjects(activeCollidables, true);
               if (intersectionsZ.length > 0) { canMoveZ = false; velocity.z = 0; }
             }
@@ -292,7 +292,7 @@
             if (velocity.x !== 0) {
               const rayDirX = cameraRight.clone().multiplyScalar(velocity.x > 0 ? 1 : -1);
               raycaster.set(rayOrigin, rayDirX);
-              raycaster.far = Math.abs(velocity.x * delta) + 1.2;
+              raycaster.far = Math.abs(velocity.x * delta) + 0.1;
               const intersectionsX = raycaster.intersectObjects(activeCollidables, true);
               if (intersectionsX.length > 0) { canMoveX = false; velocity.x = 0; }
             }
@@ -307,7 +307,7 @@
               combinedHeading.normalize();
 
               raycaster.set(rayOrigin, combinedHeading);
-              raycaster.far = totalDistance + 1.2;
+              raycaster.far = totalDistance + 0.1;
               const intersectionsDiagonal = raycaster.intersectObjects(activeCollidables, true);
               if (intersectionsDiagonal.length > 0) {
                 canMoveDiagonal = false;
