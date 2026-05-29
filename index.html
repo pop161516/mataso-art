@@ -224,8 +224,8 @@
       raycaster.near = 0;
       raycaster.far = 1.0; // Distance of the check in front/behind you
 
-      // 8. Animation Loop with Active Debugging
-      let lastLogTime = 0; // To prevent flooding the screen logger too fast
+      // 8. Animation Loop with Bulletproof Sliding Fixes
+      let lastLogTime = 0;
 
       function animate() {
         requestAnimationFrame(animate);
@@ -244,23 +244,14 @@
           if (keyboard.KeyA || keyboard.KeyD) velocity.x += direction.x * moveSpeed * delta;
 
           const controlObject = controls.getObject();
-
-          // --- DIAGNOSTIC 1: LOWER THE CAMERA HEIGHT ---
-          // If 1.6 was too high, let's force it down to 1.0 (waist height) to catch shorter walls
-          controlObject.position.y = 1.0; 
+          controlObject.position.y = 1.0; // Maintain waist height
 
           let canMoveZ = true;
           let canMoveX = true;
+          let canMoveDiagonal = true; // New fallback guard
 
-          // --- DIAGNOSTIC 2: CHECK TRACKING ARRAY ---
-          if (collidableObjects.length === 0) {
-            const currentTime = performance.now();
-            if (currentTime - lastLogTime > 2000) { // Log every 2 seconds
-              log("⚠️ DEBUG: collidableObjects array is EMPTY! No meshes are being tracked.", true);
-              lastLogTime = currentTime;
-            }
-          } else {
-            // Get movement vectors
+          if (collidableObjects.length > 0) {
+            // Get camera directions
             const cameraDirection = new THREE.Vector3();
             controlObject.getWorldDirection(cameraDirection);
             cameraDirection.y = 0;
@@ -269,53 +260,70 @@
             const cameraRight = new THREE.Vector3();
             cameraRight.crossVectors(cameraDirection, controlObject.up).normalize().negate();
 
-            // --- DIAGNOSTIC 3: LOWER THE RAYCAST ORIGIN ---
-            // Drop the start point of the raycast down closer to the floor (Y = 0.5) 
-            // so it hits the middle of short plinths/walls.
             const rayOrigin = controlObject.position.clone();
-            rayOrigin.y = 0.1; 
+            rayOrigin.y = 0.5; // Cast from low center
 
-            // Z Collision (Forward/Backward)
+            // 1. Z Collision (Forward/Backward)
             if (velocity.z !== 0) {
               const rayDirZ = cameraDirection.clone().multiplyScalar(velocity.z < 0 ? 1 : -1);
-              
               raycaster.set(rayOrigin, rayDirZ);
-              raycaster.far = Math.abs(velocity.z * delta) + 0.1; // Increased buffer size
+              raycaster.far = Math.abs(velocity.z * delta) + 1.2;
 
               const intersectionsZ = raycaster.intersectObjects(collidableObjects, true);
-              
               if (intersectionsZ.length > 0) {
-                // SUCCESSFUL HIT REGISTRATION!
-                const hitObject = intersectionsZ[0].object;
-                log(`💥 HIT Z! Object: "${hitObject.name}" | Distance: ${intersectionsZ[0].distance.toFixed(2)}`);
-                
                 canMoveZ = false;
                 velocity.z = 0;
               }
             }
 
-            // X Collision (Left/Right)
+            // 2. X Collision (Left/Right)
             if (velocity.x !== 0) {
               const rayDirX = cameraRight.clone().multiplyScalar(velocity.x > 0 ? 1 : -1);
-              
               raycaster.set(rayOrigin, rayDirX);
-              raycaster.far = Math.abs(velocity.x * delta) + 1.5;
+              raycaster.far = Math.abs(velocity.x * delta) + 1.2;
 
               const intersectionsX = raycaster.intersectObjects(collidableObjects, true);
-              
               if (intersectionsX.length > 0) {
-                // SUCCESSFUL HIT REGISTRATION!
-                const hitObject = intersectionsX[0].object;
-                log(`💥 HIT X! Object: "${hitObject.name}" | Distance: ${intersectionsX[0].distance.toFixed(2)}`);
-                
                 canMoveX = false;
                 velocity.x = 0;
               }
             }
+
+            // 3. THE DIAGONAL SLIDE FIX: Look exactly where the player's total velocity is heading
+            if ((velocity.x !== 0 || velocity.z !== 0) && (canMoveX && canMoveZ)) {
+              // Calculate unified total heading vector
+              const combinedHeading = new THREE.Vector3();
+              
+              // Project forward/backward movement vector
+              const fwdVector = cameraDirection.clone().multiplyScalar(-velocity.z * delta);
+              // Project left/right movement vector
+              const sideVector = cameraRight.clone().multiplyScalar(velocity.x * delta);
+              
+              // Add them together to find the true trajectory path
+              combinedHeading.addVectors(fwdVector, sideVector);
+              const totalDistance = combinedHeading.length();
+              combinedHeading.normalize();
+
+              // Shoot a final predictive ray down your path of movement
+              raycaster.set(rayOrigin, combinedHeading);
+              raycaster.far = totalDistance + 1.2; // Extra padding boundary
+
+              const intersectionsDiagonal = raycaster.intersectObjects(collidableObjects, true);
+              if (intersectionsDiagonal.length > 0) {
+                // If diagonal trajectory hits a corner edge, stop all movement immediately
+                canMoveDiagonal = false;
+                velocity.x = 0;
+                velocity.z = 0;
+                
+                const hitObject = intersectionsDiagonal[0].object;
+                log(`🛑 DIAGONAL BLOCK! Blocked clipping into corner of: "${hitObject.name}"`);
+              }
+            }
           }
 
-          if (canMoveX) controls.moveRight(velocity.x * delta);
-          if (canMoveZ) controls.moveForward(-velocity.z * delta); 
+          // Apply movement step safely only if all checks pass
+          if (canMoveX && canMoveDiagonal) controls.moveRight(velocity.x * delta);
+          if (canMoveZ && canMoveDiagonal) controls.moveForward(-velocity.z * delta); 
         }
 
         renderer.render(scene, camera);
