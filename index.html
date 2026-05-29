@@ -123,6 +123,13 @@
       const visibleGreyMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.2, roughness: 0.8 });
       const transparentInvisibleMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 });
       
+      // FIX: Defining the missing material variable so it doesn't crash!
+      const visibleBoundaryMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xff0000, 
+        transparent: true, 
+        opacity: 0.3 // Translucent red so you can see your boundary walls while debugging
+      });
+
       // Transparent Green for Triggers
       const triggerGreenMaterial = new THREE.MeshBasicMaterial({ 
         color: 0x00ff00, 
@@ -135,8 +142,8 @@
       // Notice "art_room" updated below based on your configuration requirement
       const modelsToLoad = [
         { name: 'Hexagon', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/Hexagon.glb' },
-        { name: 'art_room', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/art_room.glb' },
-        { name: 'SmallWalls', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/SmallWalls3.glb' }
+        { name: 'ArtRoomFull', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/ArtRoomFull.glb' },
+        { name: 'SmallWalls', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/SmallWallsNew.glb' }
       ];
 
       // 3. Robust Name Filtering and Asset Injector Loop
