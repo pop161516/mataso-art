@@ -131,8 +131,8 @@
       // List of all models to parse
       const modelsToLoad = [
         { name: 'Hexagon', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/Hexagon.glb' },
-        { name: 'ArtRoomTest1', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/ArtRoomTest1.glb' },
-        { name: 'SmallWalls', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/SmallWalls.glb' }
+        { name: 'ArtRoomTest2', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/ArtRoomTest2.glb' },
+        { name: 'SmallWalls3', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/SmallWalls3.glb' }
       ];
 
       // Loop through and load every asset dynamically
@@ -154,8 +154,8 @@
                   // No floor collision added here!
                 }
 
-                // --- MODEL RULE 2: ArtRoomTest1 ---
-                if (modelInfo.name === 'ArtRoomTest1') {
+                // --- MODEL RULE 2: ArtRoomTest2 ---
+                if (modelInfo.name === 'ArtRoomTest2') {
                   // Make plinths/objects solid grey boundaries
                   if (!child.name.toLowerCase().includes('floor')) {
                     child.material = visibleGreyMaterial; // Grey color applied
@@ -166,8 +166,8 @@
                   }
                 }
 
-                // --- MODEL RULE 3: SmallWalls ---
-                if (modelInfo.name === 'SmallWalls') {
+                // --- MODEL RULE 3: SmallWalls3 ---
+                if (modelInfo.name === 'SmallWalls3') {
                   child.material = visibleBoundaryMaterial; // NOW RED AND VISIBLE
                   collidableObjects.push(child); // Acts as your boundary wall
                 }
