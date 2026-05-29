@@ -101,17 +101,15 @@
       // 2. Room Management State Object
       const RoomManager = {
         art: {
-          meshes: [],             // All objects matching art_****
-          collidables: [],         // Collidables inside this specific room
-          triggerMesh: null,       // The ArtTrigger bounding box object
-          triggerBox3: null,       // The mathematical volume box
-          isActive: false          // Current state tracking toggles
+          meshes: [],             
+          collidables: [],         
+          triggerMesh: null,       
+          triggerBox3: null,       
+          isActive: false          
         }
-        // Future extensions can be added easily here:
-        // video: { meshes: [], collidables: [], triggerMesh: null, triggerBox3: null, isActive: false }
       };
 
-      const baseCollidableObjects = []; // Static boundaries that are ALWAYS active (e.g. SmallWalls)
+      const baseCollidableObjects = []; 
 
       // Loaders
       const loader = new GLTFLoader();
@@ -123,14 +121,12 @@
       const visibleGreyMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, metalness: 0.2, roughness: 0.8 });
       const transparentInvisibleMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.0 });
       
-      // FIX: Defining the missing material variable so it doesn't crash!
       const visibleBoundaryMaterial = new THREE.MeshBasicMaterial({ 
         color: 0xff0000, 
         transparent: true, 
-        opacity: 0.3 // Translucent red so you can see your boundary walls while debugging
+        opacity: 0.3 
       });
 
-      // Transparent Green for Triggers
       const triggerGreenMaterial = new THREE.MeshBasicMaterial({ 
         color: 0x00ff00, 
         transparent: true, 
@@ -139,7 +135,6 @@
       });
 
       // Asset Manifest Array
-      // Notice "art_room" updated below based on your configuration requirement
       const modelsToLoad = [
         { name: 'Hexagon', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/Hexagon.glb' },
         { name: 'ArtRoomFull', path: 'https://raw.githack.com/pop161516/mataso-art/main/Modles/ArtRoomFull.glb' },
@@ -157,11 +152,9 @@
             gltf.scene.traverse((child) => {
               if (child.isMesh) {
                 
-                // --- A. CRITICAL FIX: Target anything containing 'Trigger' ---
+                // --- A. Target anything containing 'Trigger' ---
                 if (child.name.toLowerCase().includes('trigger')) {
                   child.material = triggerGreenMaterial;
-                  
-                  // Compute mathematical bounding parameters
                   child.geometry.computeBoundingBox();
                   
                   RoomManager.art.triggerMesh = child;
@@ -170,13 +163,11 @@
                   return; 
                 }
 
-                // --- B. Handle Dynamic Room Collections (Prefix art_) ---
-                if (modelInfo.name.startsWith('art_')) {
-                  // Keep it visible for now so you can see where to walk
-                  child.visible = false; 
+                // --- B. FIX: Catch Art Room Assets using a cleaner lowercase keyword check ---
+                if (modelInfo.name.toLowerCase().includes('artroom')) {
+                  child.visible = false; // Start hidden, triggered via boundary collision zone
                   RoomManager.art.meshes.push(child);
                   
-                  // If it's a solid part of the art room (like your plinth), track it!
                   if (!child.name.toLowerCase().includes('floor')) {
                     child.material = visibleGreyMaterial;
                     RoomManager.art.collidables.push(child);
@@ -187,11 +178,12 @@
                   return;
                 }
 
-                // --- C. CRITICAL FIX: Target anything from the SmallWalls file ---
+                // --- C. FIX: Catch anything loaded from the SmallWalls file definition ---
                 if (modelInfo.name === 'SmallWalls') {
-                  child.material = visibleBoundaryMaterial; // Keep translucent red for debugging
+                  child.material = visibleBoundaryMaterial; 
                   baseCollidableObjects.push(child); 
                   log(`🚧 SUCCESS: Wall collider tracked safely from: "${child.name}"`);
+                  return;
                 }
                 
                 // --- D. Handle Lobby Floor ---
@@ -247,20 +239,16 @@
           // STEP 1: DYNAMIC ROOM TRIGGER LOGIC (VOLUME OVERLAP CHECK)
           // -------------------------------------------------------------
           if (RoomManager.art.triggerMesh && RoomManager.art.triggerBox3) {
-            // Synchronize moving transformations from Blender relative spacing matrix
             RoomManager.art.triggerBox3.copy(RoomManager.art.triggerMesh.geometry.boundingBox)
                                        .applyMatrix4(RoomManager.art.triggerMesh.matrixWorld);
 
-            // Is the camera's current point coordinates enclosed inside the box volume dimensions?
             const isInsideArt = RoomManager.art.triggerBox3.containsPoint(controlObject.position);
 
             if (isInsideArt && !RoomManager.art.isActive) {
-              // PLAYER JUST ENTERED THE ART ROOM
               RoomManager.art.isActive = true;
               RoomManager.art.meshes.forEach(m => m.visible = true);
               log("✨ ENTERED: Art Room activated.");
             } else if (!isInsideArt && RoomManager.art.isActive) {
-              // PLAYER LEFT THE ART ROOM
               RoomManager.art.isActive = false;
               RoomManager.art.meshes.forEach(m => m.visible = false);
               log("🌑 EXITED: Art Room deactivated.");
@@ -269,7 +257,6 @@
 
           // -------------------------------------------------------------
           // STEP 2: CONTEXTUAL COLLISIONS ASSEMBLY
-          // Combine permanent walls with current active dynamic room collision profiles
           // -------------------------------------------------------------
           let activeCollidables = [...baseCollidableObjects];
           if (RoomManager.art.isActive) {
