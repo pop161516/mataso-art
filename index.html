@@ -107,11 +107,11 @@
 
       // 4. Load Blender Model
       const loader = new GLTFLoader();
-      // const modelPath = '/AvasRoom.glb';
+      // const modelPath = '/Hexagon.glb';
       // Replace this with your actual GitHub username and repository name!
-      const modelPath = 'https://raw.githack.com/pop161516/mataso-art/main/AvasRoom.glb';
+      const modelPath = 'https://raw.githack.com/pop161516/mataso-art/main/Hexagon.glb';
 
-      //[https://github.com/pop161516/mataso-art/blob/main/AvasRoom.glb](https://github.com/pop161516/mataso-art/blob/main/AvasRoom.glb)
+      //[https://github.com/pop161516/mataso-art/blob/main/Hexagon.glb](https://github.com/pop161516/mataso-art/blob/main/Hexagon.glb)
       log(`Attempting to load 3D asset from: "${modelPath}"...`);
 
       loader.load(
@@ -119,6 +119,24 @@
         function (gltf) {
           scene.add(gltf.scene);
           log("✅ SUCCESS: Blender model loaded and added to scene!");
+
+          // Traverse the 3D model to find your walls/objects
+          gltf.scene.traverse((child) => {
+            if (child.isMesh) {
+              // OPTION A: Add EVERYTHING except the floor
+              if (child.name !== "Floor") { 
+                collidableObjects.push(child);
+              }
+              
+              // OPTION B: Only add objects that have "wall" or "solid" in their Blender name
+              // if (child.name.toLowerCase().includes('wall') || child.name.toLowerCase().includes('solid')) {
+              //   collidableObjects.push(child);
+              // }
+            }
+          });
+
+          log("✅ SUCCESS: Blender model loaded and collision targets mapped!");
+        
         },
         function (xhr) {
           if (xhr.total > 0) {
@@ -154,6 +172,8 @@
 
       // 6. Movement Logic
       const keyboard = { KeyW: false, KeyA: false, KeyS: false, KeyD: false };
+
+      const collidableObjects = [];
 
       document.addEventListener('keydown', (e) => { 
         if (keyboard[e.code] !== undefined) keyboard[e.code] = true; 
