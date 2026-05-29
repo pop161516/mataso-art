@@ -173,7 +173,7 @@
                 // --- B. Handle Dynamic Room Collections (Prefix art_) ---
                 if (modelInfo.name.startsWith('art_')) {
                   // Keep it visible for now so you can see where to walk
-                  child.visible = true; 
+                  child.visible = false; 
                   RoomManager.art.meshes.push(child);
                   
                   // If it's a solid part of the art room (like your plinth), track it!
