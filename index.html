@@ -68,6 +68,7 @@
     <script type="module">
       import * as THREE from 'three';
       import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+      import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js'; // 1. Import DRACOLoader
       import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 
       // Custom logger to print to screen and console
@@ -107,9 +108,15 @@
 
       // 4. Load Blender Model
       const loader = new GLTFLoader();
+      
+      // 2. Configure Draco Decoder using Google's CDN-hosted decoder files
+      const dracoLoader = new DRACOLoader();
+      dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+      loader.setDRACOLoader(dracoLoader); // 3. Hand it over to your GLTFLoader
+
       // const modelPath = '/Hexagon.glb';
       // Replace this with your actual GitHub username and repository name!
-      const modelPath = 'https://raw.githack.com/pop161516/mataso-art/main/AvasRoom.glb';
+      const modelPath = 'https://raw.githack.com/pop161516/mataso-art/main/Hexagon.glb';
 
       //[https://github.com/pop161516/mataso-art/blob/main/Hexagon.glb](https://github.com/pop161516/mataso-art/blob/main/Hexagon.glb)
       log(`Attempting to load 3D asset from: "${modelPath}"...`);
