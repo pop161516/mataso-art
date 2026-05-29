@@ -176,7 +176,7 @@
                   }
                   
                   // Forcefully hide room initially
-                  child.visible = false;
+                  child.visible = true;
                   return;
                 }
 
@@ -188,6 +188,9 @@
                 if (modelInfo.name === 'SmallWalls') {
                   child.material = transparentInvisibleMaterial;
                   baseCollidableObjects.push(child); // Global boundary tracking
+
+                  // ADD THIS DEBUG LINE HERE:
+                  log(`🚧 DEBUG: Added ${child.name} from SmallWalls file into collision tracking array!`);
                 }
               }
             });
