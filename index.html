@@ -261,13 +261,13 @@
             cameraRight.crossVectors(cameraDirection, controlObject.up).normalize().negate();
 
             const rayOrigin = controlObject.position.clone();
-            rayOrigin.y = 0.5; // Cast from low center
+            rayOrigin.y = 0.1; // Cast from low center
 
             // 1. Z Collision (Forward/Backward)
             if (velocity.z !== 0) {
               const rayDirZ = cameraDirection.clone().multiplyScalar(velocity.z < 0 ? 1 : -1);
               raycaster.set(rayOrigin, rayDirZ);
-              raycaster.far = Math.abs(velocity.z * delta) + 1.2;
+              raycaster.far = Math.abs(velocity.z * delta) + 0.1;
 
               const intersectionsZ = raycaster.intersectObjects(collidableObjects, true);
               if (intersectionsZ.length > 0) {
@@ -306,7 +306,7 @@
 
               // Shoot a final predictive ray down your path of movement
               raycaster.set(rayOrigin, combinedHeading);
-              raycaster.far = totalDistance + 1.2; // Extra padding boundary
+              raycaster.far = totalDistance + 0.1; // Extra padding boundary
 
               const intersectionsDiagonal = raycaster.intersectObjects(collidableObjects, true);
               if (intersectionsDiagonal.length > 0) {
