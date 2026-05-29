@@ -231,9 +231,11 @@
         const delta = clock.getDelta();
 
         if (controls.isLocked === true) {
+          // Apply friction/damping
           velocity.x -= velocity.x * 10.0 * delta;
           velocity.z -= velocity.z * 10.0 * delta;
 
+          // Determine keyboard input direction
           direction.z = Number(keyboard.KeyS) - Number(keyboard.KeyW); 
           direction.x = Number(keyboard.KeyD) - Number(keyboard.KeyA);
           direction.normalize(); 
@@ -241,36 +243,61 @@
           if (keyboard.KeyW || keyboard.KeyS) velocity.z += direction.z * moveSpeed * delta;
           if (keyboard.KeyA || keyboard.KeyD) velocity.x += direction.x * moveSpeed * delta;
 
-          // --- ACTIVATE COLLISIONS ---
-          // Step 1: Detect Direction
-          let moveForward = velocity.z < 0; 
-          let moveBackward = velocity.z > 0;
-          let moveLeft = velocity.x < 0;
-          let moveRight = velocity.x > 0;
-
-          const controlObject = controls.getObject(); // Camera/Body container
+          const controlObject = controls.getObject(); // This is our camera
 
           let canMoveZ = true;
           let canMoveX = true;
 
           if (collidableObjects.length > 0) {
-            // Check Forward/Backward (Z) collisions
-            const dirZ = moveForward ? new THREE.Vector3(0, 0, -1) : new THREE.Vector3(0, 0, 1);
-            raycaster.set(controlObject.position, dirZ); // Cast ray from player position
-            const intersectionsZ = raycaster.intersectObjects(collidableObjects);
-            if (intersectionsZ.length > 0) { canMoveZ = false; }
+            // --- FIX: Get the actual direction the camera is facing in the world ---
+            const cameraDirection = new THREE.Vector3();
+            controlObject.getWorldDirection(cameraDirection);
+            
+            // Flatten the vector to the XZ plane so looking up/down doesn't break walking
+            cameraDirection.y = 0;
+            cameraDirection.normalize();
 
-            // Check Left/Right (X) collisions
-            const dirX = moveLeft ? new THREE.Vector3(-1, 0, 0) : new THREE.Vector3(1, 0, 0);
-            raycaster.set(controlObject.position, dirX); // Cast ray from player position
-            const intersectionsX = raycaster.intersectObjects(collidableObjects);
-            if (intersectionsX.length > 0) { canMoveX = false; }
+            // Calculate the right-hand vector for strafing (Left/Right movement)
+            const cameraRight = new THREE.Vector3();
+            cameraRight.crossVectors(cameraDirection, controlObject.up).normalize().negate();
+
+            // --- Z Movement Collision Check (Forward / Backward) ---
+            if (velocity.z !== 0) {
+              // If moving forward, look ahead. If moving backward, look behind.
+              const rayDirZ = cameraDirection.clone().multiplyScalar(velocity.z < 0 ? 1 : -1);
+              
+              // Set raycaster starting at camera position, pointing in movement direction
+              raycaster.set(controlObject.position, rayDirZ);
+              
+              // Dynamic buffer: Make sure we check far enough ahead based on our current speed
+              raycaster.far = Math.abs(velocity.z * delta) + 1.0; 
+
+              const intersectionsZ = raycaster.intersectObjects(collidableObjects);
+              if (intersectionsZ.length > 0) {
+                canMoveZ = false;
+                velocity.z = 0; // Absolute stop
+              }
+            }
+
+            // --- X Movement Collision Check (Left / Right) ---
+            if (velocity.x !== 0) {
+              // If moving right, look right. If moving left, look left.
+              const rayDirX = cameraRight.clone().multiplyScalar(velocity.x > 0 ? 1 : -1);
+              
+              raycaster.set(controlObject.position, rayDirX);
+              raycaster.far = Math.abs(velocity.x * delta) + 1.0;
+
+              const intersectionsX = raycaster.intersectObjects(collidableObjects);
+              if (intersectionsX.length > 0) {
+                canMoveX = false;
+                velocity.x = 0; // Absolute stop
+              }
+            }
           }
 
-          // Apply movement if collision check permits
+          // Apply movement adjustments if safe
           if (canMoveX) controls.moveRight(velocity.x * delta);
           if (canMoveZ) controls.moveForward(-velocity.z * delta); 
-
         }
 
         renderer.render(scene, camera);
