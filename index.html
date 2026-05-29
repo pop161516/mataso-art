@@ -273,14 +273,14 @@
             // Drop the start point of the raycast down closer to the floor (Y = 0.5) 
             // so it hits the middle of short plinths/walls.
             const rayOrigin = controlObject.position.clone();
-            rayOrigin.y = 0.5; 
+            rayOrigin.y = 0.1; 
 
             // Z Collision (Forward/Backward)
             if (velocity.z !== 0) {
               const rayDirZ = cameraDirection.clone().multiplyScalar(velocity.z < 0 ? 1 : -1);
               
               raycaster.set(rayOrigin, rayDirZ);
-              raycaster.far = Math.abs(velocity.z * delta) + 1.5; // Increased buffer size
+              raycaster.far = Math.abs(velocity.z * delta) + 0.1; // Increased buffer size
 
               const intersectionsZ = raycaster.intersectObjects(collidableObjects, true);
               
